@@ -1,0 +1,106 @@
+@import "tailwindcss";
+
+/* 
+  ============================================================
+  MOUNTKEY ENTERPRISE THEME
+  Style: Utilitarian, Data-First, High Density
+  ============================================================ 
+*/
+
+:root {
+  /* Tekstur warna yang 'dingin' dan stabil */
+  --bg-app: #f8fafc;
+  /* Slate-50 */
+  --bg-panel: #ffffff;
+  --border-subtle: #e2e8f0;
+  /* Slate-200 */
+  --border-strong: #cbd5e1;
+  /* Slate-300 */
+
+  --text-primary: #0f172a;
+  /* Slate-900 */
+  --text-secondary: #475569;
+  /* Slate-600 */
+  --text-tertiary: #94a3b8;
+  /* Slate-400 */
+
+  --accent: #334155;
+  /* Slate-700 - Professional Dark Blue-Grey */
+  --accent-hover: #1e293b;
+  /* Slate-800 */
+}
+
+/* Reset & Base Typography */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  font-size: 13px;
+  /* Ukuran font enterprise standard */
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Headings */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+
+/* Enterprise Table Styles */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+th {
+  background-color: #f1f5f9;
+  /* Slate-100 */
+  color: var(--text-secondary);
+  font-weight: 600;
+  text-align: left;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-strong);
+}
+
+td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+}
+
+tr:hover td {
+  background-color: #f8fafc;
+}
+
+/* Utilities override */
+.container-fluid {
+  max-width: 100%;
+  padding: 0 24px;
+}
+
+/* Scrollbar halus tapi terlihat */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border: 2px solid #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}

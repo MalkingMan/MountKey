@@ -1,0 +1,961 @@
+# ============================================================
+# MOUNTKEY PUBLIC API v1 - OPENAPI SPECIFICATION
+# ============================================================
+# Version: 1.0.0
+# OpenAPI: 3.0.3
+# Last Updated: 2026-01-10
+# ============================================================
+
+openapi: 3.0.3
+
+info:
+  title: MountKey API
+  version: 1.0.0
+  description: |
+    # MountKey Public API
+    
+    API Platform Data Gunung & Jalur Pendakian Indonesia.
+    
+    ## Overview
+    
+    MountKey menyediakan data komprehensif tentang gunung-gunung di Indonesia, 
+    termasuk jalur pendakian, checkpoint, dan penilaian risiko cuaca realtime.
+    
+    ## Authentication
+    
+    Semua endpoint v1 memerlukan API Key yang valid.
+    
+    ```
+    X-MountKey-API-Key: mk_live_xxxxxxxxxxxxxxxxxxxxxxxx
+    ```
+    
+    Dapatkan API key dengan mendaftar di `/auth/register`.
+    
+    ## Rate Limiting
+    
+    Saat ini tidak ada rate limiting. Gunakan API secara bertanggung jawab.
+    
+    ## Error Handling
+    
+    Semua error menggunakan format konsisten:
+    
+    ```json
+    {
+      "success": false,
+      "message": "Error description",
+      "error_code": "ERROR_CODE",
+      "timestamp": "2026-01-10T06:02:16.000Z"
+    }
+    ```
+    
+  contact:
+    name: MountKey API Support
+    email: api@mountkey.id
+    url: https://mountkey.id
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:3000
+    description: Development Server
+  - url: https://api.mountkey.id
+    description: Production Server (coming soon)
+
+tags:
+  - name: Mountains
+    description: Operasi terkait data gunung
+  - name: Trails
+    description: Operasi terkait jalur pendakian
+  - name: Weather Risk
+    description: Penilaian risiko cuaca untuk pendakian
+
+# ============================================================
+# SECURITY SCHEMES
+# ============================================================
+
+security:
+  - ApiKeyAuth: []
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-MountKey-API-Key
+      description: |
+        API Key untuk autentikasi.
+        Format: `mk_live_xxxxxxxxxxxxxxxxxxxxxxxx`
+        
+        Dapatkan API key dengan mendaftar di `/auth/register`.
+
+  # ============================================================
+  # SCHEMAS
+  # ============================================================
+  
+  schemas:
+    # ----------------------------------------------------------
+    # Common Schemas
+    # ----------------------------------------------------------
+    
+    Coordinates:
+      type: object
+      properties:
+        latitude:
+          type: number
+          format: double
+          example: -8.1077
+        longitude:
+          type: number
+          format: double
+          example: 112.9220
+    
+    Pagination:
+      type: object
+      properties:
+        current_page:
+          type: integer
+          example: 1
+        per_page:
+          type: integer
+          example: 20
+        total_items:
+          type: integer
+          example: 50
+        total_pages:
+          type: integer
+          example: 3
+        has_next:
+          type: boolean
+          example: true
+        has_prev:
+          type: boolean
+          example: false
+    
+    # ----------------------------------------------------------
+    # Mountain Schemas
+    # ----------------------------------------------------------
+    
+    MountainLocation:
+      type: object
+      properties:
+        province:
+          type: string
+          example: "Jawa Timur"
+        regency:
+          type: string
+          nullable: true
+          example: "Lumajang"
+        coordinates:
+          $ref: '#/components/schemas/Coordinates'
+    
+    MountainConservation:
+      type: object
+      properties:
+        area:
+          type: string
+          nullable: true
+          example: "TN Bromo Tengger Semeru"
+        type:
+          type: string
+          enum: [national_park, nature_reserve, wildlife_sanctuary, recreation_park, hunting_park, grand_forest_park, none]
+          example: "national_park"
+    
+    Mountain:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "Gunung Semeru"
+        slug:
+          type: string
+          example: "semeru"
+        location:
+          $ref: '#/components/schemas/MountainLocation'
+        elevation_meters:
+          type: integer
+          example: 3676
+        status:
+          type: string
+          enum: [active, dormant, extinct]
+          example: "active"
+        type:
+          type: string
+          enum: [stratovolcano, shield, caldera, complex, non_volcanic]
+          example: "stratovolcano"
+        conservation:
+          $ref: '#/components/schemas/MountainConservation'
+        description:
+          type: string
+          nullable: true
+          example: "Gunung tertinggi di Pulau Jawa"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    
+    MountainDetail:
+      allOf:
+        - $ref: '#/components/schemas/Mountain'
+        - type: object
+          properties:
+            trail_count:
+              type: integer
+              example: 2
+    
+    MountainSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "Gunung Semeru"
+        slug:
+          type: string
+          example: "semeru"
+    
+    # ----------------------------------------------------------
+    # Trail Schemas
+    # ----------------------------------------------------------
+    
+    TrailBasecamp:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "Ranu Pane"
+        village:
+          type: string
+          nullable: true
+          example: "Ranu Pane"
+        district:
+          type: string
+          nullable: true
+          example: "Senduro"
+        coordinates:
+          $ref: '#/components/schemas/Coordinates'
+          nullable: true
+    
+    TrailEstimatedHours:
+      type: object
+      properties:
+        up:
+          type: number
+          format: float
+          nullable: true
+          example: 8.0
+        down:
+          type: number
+          format: float
+          nullable: true
+          example: 5.0
+        total:
+          type: number
+          format: float
+          nullable: true
+          example: 13.0
+    
+    TrailDifficulty:
+      type: object
+      properties:
+        level:
+          type: integer
+          minimum: 1
+          maximum: 5
+          example: 4
+        label:
+          type: string
+          enum: [Easy, Moderate, Challenging, Difficult, Extreme]
+          example: "Difficult"
+    
+    Trail:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "Via Ranu Pane"
+        slug:
+          type: string
+          example: "semeru-via-ranu-pane"
+        basecamp:
+          $ref: '#/components/schemas/TrailBasecamp'
+        distance_km:
+          type: number
+          format: float
+          nullable: true
+          example: 18.5
+        estimated_hours:
+          $ref: '#/components/schemas/TrailEstimatedHours'
+        difficulty_level:
+          type: integer
+          minimum: 1
+          maximum: 5
+          example: 4
+        status:
+          type: string
+          enum: [open, closed, restricted, maintenance]
+          example: "open"
+        status_reason:
+          type: string
+          nullable: true
+          example: null
+        daily_quota:
+          type: integer
+          nullable: true
+          example: 600
+        description:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    
+    TrailDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "Via Ranu Pane"
+        slug:
+          type: string
+          example: "semeru-via-ranu-pane"
+        mountain:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 1
+            name:
+              type: string
+              example: "Gunung Semeru"
+            slug:
+              type: string
+              example: "semeru"
+            elevation_meters:
+              type: integer
+              example: 3676
+        basecamp:
+          $ref: '#/components/schemas/TrailBasecamp'
+        distance_km:
+          type: number
+          format: float
+          nullable: true
+          example: 18.5
+        estimated_hours:
+          $ref: '#/components/schemas/TrailEstimatedHours'
+        difficulty:
+          $ref: '#/components/schemas/TrailDifficulty'
+        status:
+          type: string
+          enum: [open, closed, restricted, maintenance]
+          example: "open"
+        status_reason:
+          type: string
+          nullable: true
+        daily_quota:
+          type: integer
+          nullable: true
+          example: 600
+        description:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    
+    # ----------------------------------------------------------
+    # Checkpoint Schema
+    # ----------------------------------------------------------
+    
+    CheckpointFacilities:
+      type: object
+      properties:
+        water_source:
+          type: boolean
+          example: false
+        shelter:
+          type: boolean
+          example: true
+        camping_ground:
+          type: boolean
+          example: false
+    
+    Checkpoint:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "Pos 1 - Watu Rejeng"
+        order:
+          type: integer
+          example: 1
+        elevation_meters:
+          type: integer
+          nullable: true
+          example: 2400
+        distance_from_basecamp_km:
+          type: number
+          format: float
+          nullable: true
+          example: 3.5
+        coordinates:
+          $ref: '#/components/schemas/Coordinates'
+          nullable: true
+        facilities:
+          $ref: '#/components/schemas/CheckpointFacilities'
+        description:
+          type: string
+          nullable: true
+    
+    # ----------------------------------------------------------
+    # Weather Risk Schemas
+    # ----------------------------------------------------------
+    
+    WeatherData:
+      type: object
+      properties:
+        temperature_c:
+          type: number
+          format: float
+          example: 3.2
+        feels_like_c:
+          type: number
+          format: float
+          example: -2.1
+        wind_speed_kmh:
+          type: integer
+          example: 25
+        wind_gust_kmh:
+          type: integer
+          example: 45
+        precipitation_mm:
+          type: number
+          format: float
+          example: 0.5
+        precipitation_probability:
+          type: integer
+          example: 60
+        cloud_cover_percent:
+          type: integer
+          example: 75
+        freezing_level_mdpl:
+          type: integer
+          nullable: true
+          example: 4200
+    
+    RiskIndex:
+      type: object
+      properties:
+        score:
+          type: integer
+          minimum: 0
+          maximum: 100
+          example: 48
+        level:
+          type: string
+          enum: [LOW, MEDIUM, HIGH, EXTREME]
+          example: "MEDIUM"
+        status:
+          type: string
+          enum: [SAFE, CAUTION, NOT_RECOMMENDED]
+          example: "CAUTION"
+        reasons:
+          type: array
+          items:
+            type: string
+          example:
+            - "Angin cukup kencang (25 km/jam)"
+            - "Kemungkinan hujan tinggi (60%)"
+            - "Suhu dingin (3.2°C)"
+    
+    Recommendation:
+      type: object
+      properties:
+        summary:
+          type: string
+          example: "Kondisi cuaca memerlukan kewaspadaan ekstra."
+        advice:
+          type: array
+          items:
+            type: string
+          example:
+            - "Persiapkan perlengkapan hujan dan angin"
+            - "Bawa pakaian hangat cadangan"
+            - "Siapkan rencana evakuasi jika cuaca memburuk"
+    
+    WeatherRiskMeta:
+      type: object
+      properties:
+        source:
+          type: string
+          example: "open-meteo"
+        generated_at:
+          type: string
+          format: date-time
+        valid_for_minutes:
+          type: integer
+          example: 20
+        elevation_corrected:
+          type: boolean
+          example: true
+    
+    WeatherRiskData:
+      type: object
+      properties:
+        mountain:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 1
+            name:
+              type: string
+              example: "Gunung Semeru"
+            elevation_mdpl:
+              type: integer
+              example: 3676
+        weather:
+          $ref: '#/components/schemas/WeatherData'
+        risk_index:
+          $ref: '#/components/schemas/RiskIndex'
+        recommendation:
+          $ref: '#/components/schemas/Recommendation'
+        meta:
+          $ref: '#/components/schemas/WeatherRiskMeta'
+    
+    # ----------------------------------------------------------
+    # Error Schema
+    # ----------------------------------------------------------
+    
+    ErrorResponse:
+      type: object
+      required:
+        - success
+        - message
+        - error_code
+        - timestamp
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "Error description"
+        error_code:
+          type: string
+          example: "ERROR_CODE"
+        timestamp:
+          type: string
+          format: date-time
+
+  # ============================================================
+  # RESPONSE SCHEMAS
+  # ============================================================
+  
+  responses:
+    UnauthorizedError:
+      description: API Key tidak valid atau tidak ada
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            missing:
+              summary: API Key tidak ada
+              value:
+                success: false
+                message: "API key is required. Provide header: X-MountKey-API-Key"
+                error_code: "API_KEY_MISSING"
+                timestamp: "2026-01-10T06:02:16.000Z"
+            invalid:
+              summary: API Key tidak valid
+              value:
+                success: false
+                message: "Invalid API key"
+                error_code: "API_KEY_INVALID"
+                timestamp: "2026-01-10T06:02:16.000Z"
+            expired:
+              summary: API Key expired
+              value:
+                success: false
+                message: "API key has expired"
+                error_code: "API_KEY_EXPIRED"
+                timestamp: "2026-01-10T06:02:16.000Z"
+    
+    MountainNotFound:
+      description: Gunung tidak ditemukan
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            message: "Mountain 'invalid-slug' not found"
+            error_code: "MOUNTAIN_NOT_FOUND"
+            timestamp: "2026-01-10T06:02:16.000Z"
+    
+    TrailNotFound:
+      description: Trail tidak ditemukan
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            message: "Trail 'invalid-slug' not found"
+            error_code: "TRAIL_NOT_FOUND"
+            timestamp: "2026-01-10T06:02:16.000Z"
+    
+    WeatherServiceUnavailable:
+      description: Weather service tidak tersedia
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            message: "Weather service temporarily unavailable. Please try again later."
+            error_code: "WEATHER_SERVICE_UNAVAILABLE"
+            timestamp: "2026-01-10T06:02:16.000Z"
+
+# ============================================================
+# PATHS
+# ============================================================
+
+paths:
+  # ----------------------------------------------------------
+  # Mountains Endpoints
+  # ----------------------------------------------------------
+  
+  /v1/mountains:
+    get:
+      tags:
+        - Mountains
+      summary: List semua gunung
+      description: |
+        Mengambil daftar semua gunung dengan pagination dan filtering.
+        
+        ## Pagination
+        
+        Gunakan parameter `page` dan `limit` untuk pagination.
+        Default: page=1, limit=20, max limit=100.
+        
+        ## Filtering
+        
+        - `province`: Filter berdasarkan provinsi
+        - `status`: Filter berdasarkan status vulkanik
+        
+        ## Sorting
+        
+        - `sort`: Field untuk sorting (name, elevation_meters, province, created_at)
+        - `order`: Urutan (asc, desc)
+      operationId: listMountains
+      parameters:
+        - name: page
+          in: query
+          description: Nomor halaman (default 1)
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: limit
+          in: query
+          description: Jumlah item per halaman (default 20, max 100)
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: province
+          in: query
+          description: Filter berdasarkan provinsi
+          schema:
+            type: string
+          example: "Jawa Timur"
+        - name: status
+          in: query
+          description: Filter berdasarkan status vulkanik
+          schema:
+            type: string
+            enum: [active, dormant, extinct]
+        - name: sort
+          in: query
+          description: Field untuk sorting
+          schema:
+            type: string
+            enum: [name, elevation_meters, province, created_at]
+            default: name
+        - name: order
+          in: query
+          description: Urutan sorting
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: asc
+      responses:
+        '200':
+          description: Daftar gunung berhasil diambil
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Mountains retrieved successfully"
+                  data:
+                    type: object
+                    properties:
+                      mountains:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Mountain'
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+                  timestamp:
+                    type: string
+                    format: date-time
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+  
+  /v1/mountains/{slug}:
+    get:
+      tags:
+        - Mountains
+      summary: Detail gunung
+      description: |
+        Mengambil detail satu gunung berdasarkan slug.
+        
+        Response termasuk jumlah trail yang tersedia.
+      operationId: getMountainBySlug
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          description: Slug gunung (URL-friendly identifier)
+          schema:
+            type: string
+          example: semeru
+      responses:
+        '200':
+          description: Detail gunung berhasil diambil
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Mountain retrieved successfully"
+                  data:
+                    type: object
+                    properties:
+                      mountain:
+                        $ref: '#/components/schemas/MountainDetail'
+                  timestamp:
+                    type: string
+                    format: date-time
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/MountainNotFound'
+  
+  /v1/mountains/{slug}/trails:
+    get:
+      tags:
+        - Mountains
+        - Trails
+      summary: Trails untuk gunung
+      description: |
+        Mengambil semua jalur pendakian untuk gunung tertentu.
+      operationId: getMountainTrails
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          description: Slug gunung
+          schema:
+            type: string
+          example: semeru
+      responses:
+        '200':
+          description: Daftar trails berhasil diambil
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Trails retrieved successfully"
+                  data:
+                    type: object
+                    properties:
+                      mountain:
+                        $ref: '#/components/schemas/MountainSummary'
+                      trails:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Trail'
+                      count:
+                        type: integer
+                        example: 2
+                  timestamp:
+                    type: string
+                    format: date-time
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/MountainNotFound'
+  
+  /v1/mountains/{slug}/weather-risk:
+    get:
+      tags:
+        - Mountains
+        - Weather Risk
+      summary: Weather risk assessment
+      description: |
+        Mengambil penilaian risiko cuaca untuk pendakian gunung tertentu.
+        
+        ## Risk Score
+        
+        Score 0-100 dengan level:
+        - **LOW (0-30)**: SAFE - Kondisi aman
+        - **MEDIUM (31-60)**: CAUTION - Perlu kewaspadaan
+        - **HIGH (61-80)**: NOT_RECOMMENDED - Tidak disarankan
+        - **EXTREME (81-100)**: NOT_RECOMMENDED - Berbahaya
+        
+        ## Data Cache
+        
+        Data di-cache selama 20 menit. Field `meta.valid_for_minutes` menunjukkan 
+        berapa lama data masih valid.
+        
+        ## Temperature Correction
+        
+        Suhu sudah dikoreksi berdasarkan elevasi puncak menggunakan 
+        Environmental Lapse Rate (0.6°C per 100m).
+      operationId: getWeatherRisk
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          description: Slug gunung
+          schema:
+            type: string
+          example: semeru
+      responses:
+        '200':
+          description: Weather risk berhasil diambil
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Weather risk retrieved successfully"
+                  data:
+                    $ref: '#/components/schemas/WeatherRiskData'
+                  timestamp:
+                    type: string
+                    format: date-time
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/MountainNotFound'
+        '503':
+          $ref: '#/components/responses/WeatherServiceUnavailable'
+  
+  # ----------------------------------------------------------
+  # Trails Endpoints
+  # ----------------------------------------------------------
+  
+  /v1/trails/{slug}:
+    get:
+      tags:
+        - Trails
+      summary: Detail trail
+      description: |
+        Mengambil detail satu jalur pendakian berdasarkan slug.
+        
+        Response termasuk:
+        - Informasi gunung
+        - Detail basecamp
+        - Estimasi waktu pendakian
+        - Tingkat kesulitan
+        - Daftar checkpoint dengan fasilitas
+      operationId: getTrailBySlug
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          description: Slug trail (URL-friendly identifier)
+          schema:
+            type: string
+          example: semeru-via-ranu-pane
+      responses:
+        '200':
+          description: Detail trail berhasil diambil
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Trail retrieved successfully"
+                  data:
+                    type: object
+                    properties:
+                      trail:
+                        $ref: '#/components/schemas/TrailDetail'
+                      checkpoints:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Checkpoint'
+                      checkpoint_count:
+                        type: integer
+                        example: 5
+                  timestamp:
+                    type: string
+                    format: date-time
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/TrailNotFound'
