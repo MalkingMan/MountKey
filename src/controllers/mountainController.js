@@ -13,6 +13,7 @@
 
 const { pool } = require('../config/database');
 const { success, notFound, error } = require('../utils/responseHelper');
+const { fetchCurrentWeather } = require('../services/openMeteoClient');
 
 // ============================================================
 // CONFIGURATION
@@ -134,7 +135,7 @@ async function listMountains(req, res) {
 /**
  * GET /v1/mountains/:slug
  * 
- * Get single mountain by slug
+ * Get single mountain by slug (with real-time weather)
  */
 async function getMountainBySlug(req, res) {
     try {
@@ -166,7 +167,50 @@ async function getMountainBySlug(req, res) {
         const mountain = formatMountainResponse(rows[0]);
         mountain.trail_count = trailCount[0].count;
 
-        return success(res, { mountain }, 'Mountain retrieved successfully');
+        // ─────────────────────────────────────────────────────
+        // Fetch real-time weather from Open-Meteo
+        // ─────────────────────────────────────────────────────
+        let currentWeather = null;
+        try {
+            const weatherData = await fetchCurrentWeather(
+                parseFloat(rows[0].latitude),
+                parseFloat(rows[0].longitude)
+            );
+
+            currentWeather = {
+                temperature: {
+                    current: weatherData.temperature_2m,
+                    feels_like: weatherData.apparent_temperature,
+                    unit: '°C'
+                },
+                wind: {
+                    speed: weatherData.wind_speed_10m,
+                    gusts: weatherData.wind_gusts_10m,
+                    unit: 'km/h'
+                },
+                precipitation: {
+                    current: weatherData.precipitation,
+                    probability: weatherData.precipitation_probability,
+                    unit: 'mm'
+                },
+                cloud_cover: weatherData.cloud_cover,
+                weather_code: weatherData.weather_code,
+                freezing_level_meters: weatherData.freezing_level_height,
+                fetched_at: weatherData._fetched_at,
+                source: 'open-meteo'
+            };
+        } catch (weatherError) {
+            console.warn('[MountainController] Weather fetch failed:', weatherError.message);
+            currentWeather = {
+                error: 'Weather data temporarily unavailable',
+                source: 'open-meteo'
+            };
+        }
+
+        return success(res, {
+            mountain,
+            current_weather: currentWeather
+        }, 'Mountain retrieved successfully');
 
     } catch (err) {
         console.error('[MountainController] getMountainBySlug error:', err.message);

@@ -91,7 +91,7 @@ export default function Hero() {
                     className="mt-20 flex items-center justify-center gap-12 text-sm text-gray-400"
                 >
                     <div className="flex flex-col items-center">
-                        <span className="text-2xl font-semibold text-gray-900">50+</span>
+                        <span className="text-2xl font-semibold text-gray-900">1000+</span>
                         <span>Mountains</span>
                     </div>
                     <div className="w-px h-8 bg-gray-200" />

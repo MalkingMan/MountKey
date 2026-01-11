@@ -14,7 +14,7 @@ const responseHelper = require('../utils/responseHelper');
 // ============================================================
 async function listTrails(req, res) {
     try {
-        const { page = 1, limit = 20, mountain_id } = req.query;
+        const { page = 1, limit = 20, mountain_id, search = '' } = req.query;
         const offset = (parseInt(page) - 1) * parseInt(limit);
 
         let query = `
@@ -23,21 +23,40 @@ async function listTrails(req, res) {
             LEFT JOIN mountains m ON t.mountain_id = m.id
         `;
         const params = [];
+        const conditions = [];
 
+        // Mountain filter
         if (mountain_id) {
-            query += ' WHERE t.mountain_id = ?';
+            conditions.push('t.mountain_id = ?');
             params.push(mountain_id);
+        }
+
+        // Search filter
+        if (search.trim()) {
+            conditions.push('(t.name LIKE ? OR t.slug LIKE ? OR t.basecamp_name LIKE ? OR m.name LIKE ?)');
+            const searchPattern = `%${search.trim()}%`;
+            params.push(searchPattern, searchPattern, searchPattern, searchPattern);
+        }
+
+        // Apply conditions
+        if (conditions.length > 0) {
+            query += ' WHERE ' + conditions.join(' AND ');
         }
 
         query += ` ORDER BY t.name ASC LIMIT ${parseInt(limit)} OFFSET ${offset}`;
 
         const [trails] = await pool.execute(query, params);
 
-        let countQuery = 'SELECT COUNT(*) as total FROM trails';
-        if (mountain_id) {
-            countQuery += ' WHERE mountain_id = ?';
+        // Count query with same conditions
+        let countQuery = `
+            SELECT COUNT(*) as total 
+            FROM trails t 
+            LEFT JOIN mountains m ON t.mountain_id = m.id
+        `;
+        if (conditions.length > 0) {
+            countQuery += ' WHERE ' + conditions.join(' AND ');
         }
-        const [countResult] = await pool.execute(countQuery, mountain_id ? [mountain_id] : []);
+        const [countResult] = await pool.execute(countQuery, params);
         const total = countResult[0].total;
 
         return responseHelper.success(res, {

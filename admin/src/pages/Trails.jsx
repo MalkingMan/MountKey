@@ -8,7 +8,7 @@ import { getTrails, deleteTrail, getMountains } from '../services/api'
 
 /**
  * Trails List Page
- * Table view with filter by mountain
+ * Table view with filter by mountain and search
  */
 export default function Trails() {
     const navigate = useNavigate()
@@ -16,6 +16,10 @@ export default function Trails() {
     const [mountains, setMountains] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState('')
+
+    // Search
+    const [searchQuery, setSearchQuery] = useState('')
+    const [debouncedSearch, setDebouncedSearch] = useState('')
 
     // Filters
     const [mountainFilter, setMountainFilter] = useState('')
@@ -30,6 +34,15 @@ export default function Trails() {
 
     // Delete modal
     const [deleteModal, setDeleteModal] = useState({ open: false, trail: null })
+
+    // Debounce search input
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchQuery)
+            setPage(1)
+        }, 300)
+        return () => clearTimeout(timer)
+    }, [searchQuery])
 
     const loadMountainOptions = useCallback(async () => {
         try {
@@ -64,6 +77,11 @@ export default function Trails() {
                 params.mountain_id = mountainFilter
             }
 
+            // Add search parameter if provided
+            if (debouncedSearch.trim()) {
+                params.search = debouncedSearch.trim()
+            }
+
             const response = await getTrails(params)
 
             setTrails(response.data.trails || [])
@@ -79,7 +97,7 @@ export default function Trails() {
         } finally {
             setLoading(false)
         }
-    }, [page, sortField, sortOrder, mountainFilter])
+    }, [page, sortField, sortOrder, mountainFilter, debouncedSearch])
 
     useEffect(() => {
         loadMountainOptions()
@@ -177,8 +195,38 @@ export default function Trails() {
                 </Link>
             </div>
 
-            {/* Filters */}
-            <div className="mb-4 flex gap-4">
+            {/* Filters & Search */}
+            <div className="mb-4 flex flex-wrap gap-4">
+                {/* Search Input */}
+                <div className="relative flex-1 min-w-[200px] max-w-md">
+                    <input
+                        type="text"
+                        placeholder="Search trails by name or basecamp..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-md text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                    <svg
+                        className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                    >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    {searchQuery && (
+                        <button
+                            onClick={() => setSearchQuery('')}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    )}
+                </div>
+
+                {/* Mountain Filter */}
                 <div className="w-64">
                     <Select
                         name="mountain_filter"
@@ -191,6 +239,13 @@ export default function Trails() {
                         placeholder="All Mountains"
                     />
                 </div>
+
+                {/* Search indicator */}
+                {debouncedSearch && (
+                    <span className="px-3 py-2 bg-blue-50 text-blue-700 text-sm rounded-md self-center">
+                        Searching: &quot;{debouncedSearch}&quot;
+                    </span>
+                )}
             </div>
 
             {/* Error */}

@@ -36,6 +36,7 @@ interface Filters {
     minElevation: string;
     maxElevation: string;
     type: string;
+    search: string;
 }
 
 // ============================================================
@@ -53,6 +54,7 @@ export default function MountainsPage() {
         minElevation: "",
         maxElevation: "",
         type: "",
+        search: "",
     });
 
     // Unique provinces from data
@@ -117,6 +119,13 @@ export default function MountainsPage() {
     // FILTER LOGIC (CLIENT-SIDE)
     // ────────────────────────────────────────────────────────
     const filteredMountains = mountains.filter((m) => {
+        // Search filter
+        if (filters.search) {
+            const searchLower = filters.search.toLowerCase();
+            const nameMatch = m.name.toLowerCase().includes(searchLower);
+            const provinceMatch = m.location.province.toLowerCase().includes(searchLower);
+            if (!nameMatch && !provinceMatch) return false;
+        }
         // Province filter
         if (filters.province && m.location.province !== filters.province) return false;
         // Elevation filter
@@ -132,7 +141,7 @@ export default function MountainsPage() {
     });
 
     const clearFilters = () => {
-        setFilters({ province: "", minElevation: "", maxElevation: "", type: "" });
+        setFilters({ province: "", minElevation: "", maxElevation: "", type: "", search: "" });
     };
 
     // ────────────────────────────────────────────────────────
@@ -160,7 +169,7 @@ export default function MountainsPage() {
                 </motion.header>
 
                 {/* ──────────────────────────────────────────── */}
-                {/* FILTERS */}
+                {/* SEARCH & FILTERS */}
                 {/* ──────────────────────────────────────────── */}
                 <motion.section
                     initial={{ opacity: 0, y: 20 }}
@@ -168,6 +177,36 @@ export default function MountainsPage() {
                     transition={{ duration: 0.5, delay: 0.1 }}
                     className="mb-10"
                 >
+                    {/* Search Bar */}
+                    <div className="relative mb-6">
+                        <input
+                            type="text"
+                            placeholder="Search mountains by name or province..."
+                            value={filters.search}
+                            onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+                            className="w-full px-5 py-4 pl-12 border border-gray-200 rounded-xl text-base bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent shadow-sm"
+                        />
+                        <svg
+                            className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        {filters.search && (
+                            <button
+                                onClick={() => setFilters({ ...filters, search: "" })}
+                                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Filters Row */}
                     <div className="flex flex-wrap gap-4 items-end">
                         {/* Province */}
                         <div className="flex flex-col gap-1.5">

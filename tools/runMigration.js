@@ -13,10 +13,15 @@ async function runMigration() {
         multipleStatements: true
     };
 
-    const filePath = path.join(__dirname, '../database/migration_add_weather_risks.sql');
+    const fileName = process.argv[2] || 'migration_add_weather_risks.sql';
+    const filePath = path.join(__dirname, '../database', fileName);
+    if (!fs.existsSync(filePath)) {
+        console.error(`❌ File not found: ${filePath}`);
+        process.exit(1);
+    }
     const sql = fs.readFileSync(filePath, 'utf8');
 
-    console.log('Running migration:', filePath);
+    console.log('Running SQL from:', filePath);
 
     let connection;
     try {

@@ -14,7 +14,7 @@ const responseHelper = require('../utils/responseHelper');
 // ============================================================
 async function listMountains(req, res) {
     try {
-        const { page = 1, limit = 20, sort = 'name', order = 'asc' } = req.query;
+        const { page = 1, limit = 20, sort = 'name', order = 'asc', search = '' } = req.query;
         const offset = (parseInt(page) - 1) * parseInt(limit);
 
         // Validate sort field
@@ -22,14 +22,29 @@ async function listMountains(req, res) {
         const sortField = allowedSorts.includes(sort) ? sort : 'name';
         const sortOrder = order === 'desc' ? 'DESC' : 'ASC';
 
+        // Build search condition
+        let whereClause = '';
+        let queryParams = [];
+
+        if (search.trim()) {
+            whereClause = 'WHERE (name LIKE ? OR slug LIKE ? OR province LIKE ?)';
+            const searchPattern = `%${search.trim()}%`;
+            queryParams = [searchPattern, searchPattern, searchPattern];
+        }
+
         const [mountains] = await pool.execute(`
             SELECT id, name, slug, province, regency, elevation_meters, mountain_status, mountain_type
             FROM mountains
+            ${whereClause}
             ORDER BY ${sortField} ${sortOrder}
             LIMIT ${parseInt(limit)} OFFSET ${offset}
-        `);
+        `, queryParams);
 
-        const [countResult] = await pool.execute('SELECT COUNT(*) as total FROM mountains');
+        // Count with same search condition
+        const [countResult] = await pool.execute(
+            `SELECT COUNT(*) as total FROM mountains ${whereClause}`,
+            queryParams
+        );
         const total = countResult[0].total;
 
         return responseHelper.success(res, {

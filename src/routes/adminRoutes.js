@@ -33,12 +33,18 @@ const adminAuthController = require('../controllers/adminAuthController');
 const adminMountainController = require('../controllers/adminMountainController');
 const adminTrailController = require('../controllers/adminTrailController');
 const adminUserController = require('../controllers/adminUserController');
+const adminStatsController = require('../controllers/adminStatsController');
 
 // ============================================================
 // AUTH ROUTES
 // ============================================================
 router.post('/register', adminAuthController.register);
 router.post('/login', adminAuthController.login);
+
+// ============================================================
+// DASHBOARD STATS
+// ============================================================
+router.get('/stats', adminStatsController.getDashboardStats);
 
 // ============================================================
 // MOUNTAIN ROUTES
