@@ -14,8 +14,8 @@ const sections = [
     { id: "mountain-detail", title: "Mountain Detail", isChild: true },
     { id: "trails", title: "Trails", isChild: true },
     { id: "weather-risk", title: "Weather Risk", isChild: true },
+    { id: "weather-meta", title: "Weather Meta", isChild: true },
     { id: "error-codes", title: "Error Codes" },
-    { id: "rate-limits", title: "Rate Limits" },
 ];
 
 export default function DocsPage() {
@@ -283,6 +283,75 @@ export default function DocsPage() {
                                 language="json"
                             />
                         </div>
+
+                        {/* Weather Meta */}
+                        <div id="weather-meta" className="mb-12">
+                            <h3 className="text-xl font-medium text-gray-900 mb-4">
+                                Get Weather Meta
+                            </h3>
+                            <div className="inline-flex items-center gap-2 mb-4">
+                                <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded">
+                                    GET
+                                </span>
+                                <code className="text-sm text-gray-600">
+                                    /v1/mountains/:slug/weather-meta
+                                </code>
+                            </div>
+                            <p className="text-gray-600 mb-4">
+                                Get static weather metadata including best seasons, temperature profiles,
+                                and dominant weather risks for a mountain. This data is curated by administrators
+                                based on historical patterns and local ranger observations.
+                            </p>
+                            <CodeBlock
+                                code={`curl -X GET "https://api.mountkey.dev/v1/mountains/semeru/weather-meta" \\
+  -H "X-MountKey-API-Key: mk_live_your_api_key_here"`}
+                                language="bash"
+                            />
+                            <h4 className="text-sm font-medium text-gray-900 mt-6 mb-3">
+                                Response Example
+                            </h4>
+                            <CodeBlock
+                                code={`{
+  "success": true,
+  "data": {
+    "mountain": {
+      "id": 1,
+      "name": "Gunung Semeru",
+      "slug": "semeru"
+    },
+    "seasonal_analysis": {
+      "best_season": {
+        "start_month": 4,
+        "end_month": 10,
+        "label": "April - Oktober"
+      },
+      "worst_season": {
+        "start_month": 11,
+        "end_month": 3,
+        "label": "November - Maret"
+      }
+    },
+    "temperature_profiles": {
+      "basecamp": {
+        "min_c": 10,
+        "max_c": 18
+      },
+      "summit": {
+        "min_c": -2,
+        "max_c": 5
+      }
+    },
+    "dominant_risks": [
+      "strong_winds",
+      "extreme_cold",
+      "toxic_gas"
+    ],
+    "special_notes": "Awas gas beracun di area puncak. Hindari bermalam di kawah."
+  }
+}`}
+                                language="json"
+                            />
+                        </div>
                     </section>
 
                     {/* Error Codes */}
@@ -347,33 +416,6 @@ export default function DocsPage() {
                                 </tbody>
                             </table>
                         </div>
-                    </section>
-
-                    {/* Rate Limits */}
-                    <section id="rate-limits" className="mb-16">
-                        <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-                            Rate Limits
-                        </h2>
-                        <p className="text-gray-600 mb-4">
-                            To ensure fair usage, the API has the following rate limits:
-                        </p>
-                        <ul className="list-disc list-inside text-gray-600 space-y-2">
-                            <li>
-                                <strong>Free tier:</strong> 100 requests per hour
-                            </li>
-                            <li>
-                                <strong>Weather risk data:</strong> Cached for 20 minutes
-                            </li>
-                        </ul>
-                        <p className="text-gray-600 mt-4">
-                            Rate limit headers are included in all responses:
-                        </p>
-                        <CodeBlock
-                            code={`X-RateLimit-Limit: 100
-X-RateLimit-Remaining: 95
-X-RateLimit-Reset: 1704067200`}
-                            language="http"
-                        />
                     </section>
                 </motion.main>
             </div>

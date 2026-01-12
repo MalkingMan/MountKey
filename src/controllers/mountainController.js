@@ -286,6 +286,105 @@ async function getMountainTrails(req, res) {
     }
 }
 
+/**
+ * GET /v1/mountains/:slug/weather-meta
+ * 
+ * Get weather metadata for a specific mountain (static data curated by admin)
+ */
+async function getWeatherMetaBySlug(req, res) {
+    try {
+        const { slug } = req.params;
+
+        // ─────────────────────────────────────────────────────
+        // Find mountain first
+        // ─────────────────────────────────────────────────────
+        const [mountains] = await pool.execute(
+            `SELECT id, name, slug, elevation_meters FROM mountains WHERE slug = ? AND is_active = 1 LIMIT 1`,
+            [slug]
+        );
+
+        if (mountains.length === 0) {
+            return notFound(res, `Mountain '${slug}' not found`, 'MOUNTAIN_NOT_FOUND');
+        }
+
+        const mountain = mountains[0];
+
+        // ─────────────────────────────────────────────────────
+        // Get weather meta
+        // ─────────────────────────────────────────────────────
+        const [metaRows] = await pool.execute(
+            `SELECT * FROM mountain_weather_meta WHERE mountain_id = ? LIMIT 1`,
+            [mountain.id]
+        );
+
+        // Format response
+        let weatherMeta = null;
+
+        if (metaRows.length > 0) {
+            const meta = metaRows[0];
+
+            // Parse weather_risks JSON
+            let dominantRisks = [];
+            if (meta.weather_risks) {
+                try {
+                    dominantRisks = typeof meta.weather_risks === 'string'
+                        ? JSON.parse(meta.weather_risks)
+                        : meta.weather_risks;
+                } catch (e) {
+                    dominantRisks = [];
+                }
+            }
+
+            // Map month numbers to names
+            const monthNames = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
+            weatherMeta = {
+                seasonal_analysis: {
+                    best_season: meta.best_season_start && meta.best_season_end ? {
+                        start_month: meta.best_season_start,
+                        end_month: meta.best_season_end,
+                        label: `${monthNames[meta.best_season_start]} - ${monthNames[meta.best_season_end]}`
+                    } : null,
+                    worst_season: meta.worst_season_start && meta.worst_season_end ? {
+                        start_month: meta.worst_season_start,
+                        end_month: meta.worst_season_end,
+                        label: `${monthNames[meta.worst_season_start]} - ${monthNames[meta.worst_season_end]}`
+                    } : null,
+                    source: meta.season_source || 'manual'
+                },
+                temperature_profiles: {
+                    basecamp: {
+                        min_c: meta.avg_temp_base_min,
+                        max_c: meta.avg_temp_base_max
+                    },
+                    summit: {
+                        min_c: meta.avg_temp_summit_min,
+                        max_c: meta.avg_temp_summit_max
+                    }
+                },
+                dominant_risks: dominantRisks,
+                special_notes: meta.weather_notes || null,
+                last_updated: meta.updated_at
+            };
+        }
+
+        return success(res, {
+            mountain: {
+                id: mountain.id,
+                name: mountain.name,
+                slug: mountain.slug,
+                elevation_meters: mountain.elevation_meters
+            },
+            weather_meta: weatherMeta
+        }, weatherMeta ? 'Weather meta retrieved successfully' : 'No weather meta data available');
+
+    } catch (err) {
+        console.error('[MountainController] getWeatherMetaBySlug error:', err.message);
+        return error(res, 'Failed to retrieve weather meta', 'SERVER_ERROR', 500);
+    }
+}
+
 // ============================================================
 // HELPER FUNCTIONS
 // ============================================================
@@ -366,5 +465,6 @@ function validateSortField(field) {
 module.exports = {
     listMountains,
     getMountainBySlug,
-    getMountainTrails
+    getMountainTrails,
+    getWeatherMetaBySlug
 };

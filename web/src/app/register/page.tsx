@@ -36,8 +36,12 @@ export default function RegisterPage() {
                 throw new Error(data.message || "Registration failed");
             }
 
-            // Store token and redirect
+            // Store token and user info, then redirect
             localStorage.setItem("token", data.data.token);
+            localStorage.setItem("user", JSON.stringify({
+                name: data.data.user?.name || formData.name,
+                email: data.data.user?.email || formData.email
+            }));
             window.location.href = "/api-keys";
         } catch (err) {
             setError(err instanceof Error ? err.message : "Something went wrong");

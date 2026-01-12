@@ -15,6 +15,7 @@
  * - GET /v1/mountains/:slug           - Get single mountain
  * - GET /v1/mountains/:slug/trails    - Get trails for mountain
  * - GET /v1/mountains/:slug/weather-risk - Get weather risk
+ * - GET /v1/mountains/:slug/weather-meta - Get weather meta
  * - GET /v1/trails/:slug              - Get single trail
  * ============================================================
  */
@@ -46,6 +47,7 @@ router.use(authenticateApiKey);
  * GET /v1/mountains/:slug
  * GET /v1/mountains/:slug/trails
  * GET /v1/mountains/:slug/weather-risk
+ * GET /v1/mountains/:slug/weather-meta
  */
 router.use('/mountains', mountainsRoutes);
 
@@ -93,6 +95,11 @@ router.get('/', (req, res) => {
                         method: 'GET',
                         path: '/v1/mountains/:slug/weather-risk',
                         description: 'Get weather risk assessment'
+                    },
+                    weather_meta: {
+                        method: 'GET',
+                        path: '/v1/mountains/:slug/weather-meta',
+                        description: 'Get static weather metadata'
                     }
                 },
                 trails: {

@@ -15,14 +15,19 @@
 // ============================================================
 
 const CONFIG = {
-    // Environmental Lapse Rate: 0.6°C per 100m
-    LAPSE_RATE_PER_100M: 0.6,
+    // Environmental Lapse Rate: 0.65°C per 100m (ISA standard)
+    LAPSE_RATE_PER_100M: 0.65,
 
-    // Reference elevation for API data (sea level approx)
-    REFERENCE_ELEVATION: 0,
+    // Open-Meteo provides data at coordinate elevation
+    // So we only apply a SMALL correction for summit vs base area
+    // Typical weather station is at basecamp (~2000-3000m below summit)
+    SUMMIT_CORRECTION_FACTOR: 0.3, // Only 30% of full lapse rate
 
     // Minimum freezing temperature
-    FREEZING_POINT_C: 0
+    FREEZING_POINT_C: 0,
+
+    // Maximum reasonable correction (cap to prevent extreme values)
+    MAX_TEMP_CORRECTION: 15 // Max 15°C correction
 };
 
 // ============================================================
@@ -30,29 +35,48 @@ const CONFIG = {
 // ============================================================
 
 /**
- * Koreksi suhu berdasarkan elevasi
+ * Koreksi suhu untuk puncak gunung
  * 
- * Rumus: corrected = api_temp - ((elevation / 100) * 0.6)
+ * IMPORTANT: Open-Meteo sudah memberikan suhu di koordinat gunung,
+ * BUKAN di permukaan laut. Jadi kita hanya perlu koreksi kecil
+ * untuk perbedaan antara area basecamp dan puncak.
  * 
- * @param {number} apiTemperature - Suhu dari API (°C)
+ * Formula baru:
+ * - Untuk gunung < 4000m: koreksi minimal (data sudah akurat)
+ * - Untuk gunung > 4000m: koreksi 30% dari lapse rate untuk summit
+ * 
+ * @param {number} apiTemperature - Suhu dari Open-Meteo (°C)
  * @param {number} elevation - Elevasi puncak (mdpl)
- * @param {number} referenceElevation - Elevasi referensi API (default: 0)
  * @returns {number} Suhu terkoreksi (°C)
- * 
- * @example
- * // Gunung dengan elevasi 3000m, suhu API 20°C
- * correctTemperatureForElevation(20, 3000);
- * // => 20 - (3000/100 * 0.6) = 20 - 18 = 2°C
  */
-function correctTemperatureForElevation(apiTemperature, elevation, referenceElevation = CONFIG.REFERENCE_ELEVATION) {
+function correctTemperatureForElevation(apiTemperature, elevation) {
     if (typeof apiTemperature !== 'number' || apiTemperature === null) {
         return null;
     }
 
-    const elevationDiff = elevation - referenceElevation;
-    const tempDrop = (elevationDiff / 100) * CONFIG.LAPSE_RATE_PER_100M;
+    // Open-Meteo sudah memberikan data di koordinat gunung
+    // Koreksi hanya untuk estimasi puncak vs area pengukuran
 
-    return Math.round((apiTemperature - tempDrop) * 10) / 10;
+    let tempCorrection = 0;
+
+    if (elevation > 4000) {
+        // Untuk gunung sangat tinggi (>4000m)
+        // Asumsi: data API di ~60% ketinggian, perlu koreksi ke puncak
+        const estimatedMeasurementElevation = elevation * 0.6;
+        const elevationDiff = elevation - estimatedMeasurementElevation;
+        tempCorrection = (elevationDiff / 100) * CONFIG.LAPSE_RATE_PER_100M * CONFIG.SUMMIT_CORRECTION_FACTOR;
+    } else if (elevation > 2500) {
+        // Untuk gunung tinggi (2500-4000m)
+        // Koreksi kecil saja
+        const elevationDiff = elevation * 0.2; // 20% dari elevasi
+        tempCorrection = (elevationDiff / 100) * CONFIG.LAPSE_RATE_PER_100M * CONFIG.SUMMIT_CORRECTION_FACTOR;
+    }
+    // Untuk gunung < 2500m, tidak ada koreksi (data sudah akurat)
+
+    // Cap the correction to prevent extreme values
+    tempCorrection = Math.min(tempCorrection, CONFIG.MAX_TEMP_CORRECTION);
+
+    return Math.round((apiTemperature - tempCorrection) * 10) / 10;
 }
 
 /**

@@ -22,7 +22,6 @@ export default function ApiKeysPage() {
     const [newKey, setNewKey] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [copied, setCopied] = useState(false);
-    const [showRevokeConfirm, setShowRevokeConfirm] = useState<number | null>(null);
     const [showGenerateModal, setShowGenerateModal] = useState(false);
     const [expirationDays, setExpirationDays] = useState<number>(30);
 
@@ -74,22 +73,6 @@ export default function ApiKeysPage() {
             console.error("Failed to generate API key:", error);
         } finally {
             setLoading(false);
-        }
-    };
-
-    const revokeKey = async (id: number) => {
-        try {
-            const token = localStorage.getItem("token");
-            await fetch(api.apiKeys.revoke(id), {
-                method: "DELETE",
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
-            fetchApiKeys();
-            setShowRevokeConfirm(null);
-        } catch (error) {
-            console.error("Failed to revoke API key:", error);
         }
     };
 
@@ -279,50 +262,6 @@ export default function ApiKeysPage() {
                                                 </span>
                                             </div>
                                         </div>
-                                        {key.status === 'active' && (
-                                            <div className="relative">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => setShowRevokeConfirm(key.id)}
-                                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                                >
-                                                    Revoke
-                                                </Button>
-
-                                                {/* Revoke Confirmation */}
-                                                <AnimatePresence>
-                                                    {showRevokeConfirm === key.id && (
-                                                        <motion.div
-                                                            initial={{ opacity: 0, scale: 0.95 }}
-                                                            animate={{ opacity: 1, scale: 1 }}
-                                                            exit={{ opacity: 0, scale: 0.95 }}
-                                                            className="absolute right-0 top-full mt-2 p-4 bg-white border border-gray-200 rounded-xl shadow-lg z-10 w-64"
-                                                        >
-                                                            <p className="text-sm text-gray-600 mb-3">
-                                                                Are you sure? This action cannot be undone.
-                                                            </p>
-                                                            <div className="flex gap-2">
-                                                                <Button
-                                                                    size="sm"
-                                                                    onClick={() => revokeKey(key.id)}
-                                                                    className="bg-red-600 hover:bg-red-700"
-                                                                >
-                                                                    Revoke
-                                                                </Button>
-                                                                <Button
-                                                                    size="sm"
-                                                                    variant="ghost"
-                                                                    onClick={() => setShowRevokeConfirm(null)}
-                                                                >
-                                                                    Cancel
-                                                                </Button>
-                                                            </div>
-                                                        </motion.div>
-                                                    )}
-                                                </AnimatePresence>
-                                            </div>
-                                        )}
                                     </div>
                                 </div>
                             ))}

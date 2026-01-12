@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import Select from '../components/Select'
 import Input from '../components/Input'
 import Button from '../components/Button'

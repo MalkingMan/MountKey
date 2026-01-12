@@ -62,7 +62,6 @@ async function listUsers(req, res) {
                 u.role,
                 u.status,
                 u.created_at,
-                u.last_login_at,
                 (SELECT COUNT(*) FROM api_keys WHERE user_id = u.id) as total_api_keys,
                 (SELECT COUNT(*) FROM api_keys WHERE user_id = u.id AND status = 'active') as active_api_keys
             FROM users u
@@ -78,7 +77,6 @@ async function listUsers(req, res) {
             role: row.role,
             status: row.status,
             registered_at: row.created_at,
-            last_login_at: row.last_login_at,
             total_api_keys: row.total_api_keys,
             active_api_keys: row.active_api_keys
         }));
@@ -118,7 +116,7 @@ async function getUser(req, res) {
         // Get user
         const [users] = await pool.execute(`
             SELECT 
-                id, name, email, role, status, created_at, last_login_at
+                id, name, email, role, status, created_at
             FROM users 
             WHERE id = ?
         `, [id]);
@@ -164,8 +162,7 @@ async function getUser(req, res) {
                 email: user.email,
                 role: user.role,
                 status: user.status,
-                registered_at: user.created_at,
-                last_login_at: user.last_login_at
+                registered_at: user.created_at
             },
             api_keys: maskedApiKeys
         }, 'User retrieved successfully');

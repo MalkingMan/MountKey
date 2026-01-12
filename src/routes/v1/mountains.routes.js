@@ -20,7 +20,8 @@ const router = express.Router();
 const {
     listMountains,
     getMountainBySlug,
-    getMountainTrails
+    getMountainTrails,
+    getWeatherMetaBySlug
 } = require('../../controllers/mountainController');
 const { getWeatherRiskBySlug } = require('../../controllers/weatherRiskController');
 
@@ -75,6 +76,17 @@ router.get('/:slug/trails', getMountainTrails);
  * GET /v1/mountains/semeru/weather-risk
  */
 router.get('/:slug/weather-risk', getWeatherRiskBySlug);
+
+/**
+ * GET /v1/mountains/:slug/weather-meta
+ * 
+ * Get static weather metadata for a specific mountain.
+ * Includes seasonal analysis, temperature profiles, and dominant risks.
+ * 
+ * EXAMPLE:
+ * GET /v1/mountains/semeru/weather-meta
+ */
+router.get('/:slug/weather-meta', getWeatherMetaBySlug);
 
 // ============================================================
 // EXPORTS
